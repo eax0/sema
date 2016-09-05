@@ -1,0 +1,244 @@
+<div ng-controller="WorkAreaCtrl as workareaCtrl" ng-mouseup="workareaCtrl.onMouseUp($event)">
+  <h1><input class="editable" type="text" value="{{workareaCtrl.subject}}" ng-model="workareaCtrl.subject"/></h1>
+
+  <div class="ui grid main-container">
+    <div class="three column row">
+      <div class="column" ng-controller="PhrasesCtrl as phraseCtrl">
+        <div class="list-container ui segment raised">
+          <div ng-include="'/local/keywords/templates/topbar.html'" ng-init="controller = phraseCtrl"></div>
+
+          <div class="controls">
+            <div class="ui mini input icon">
+              <input type="text" placeholder="filter..." ng-model="q">
+              <i class="filter icon"></i>
+            </div>
+
+            <label><input type="checkbox" ng-model="phraseCtrl.filtered"/> Отфильтрованные</label>
+          </div>
+
+          <ul class="phrases list" ng-show="phraseCtrl.phrases.length"
+              ng-mouseup="phraseCtrl.onMouseUp($event)"
+              ng-cloak>
+            <li class="item mdl-grid mdl-grid--no-spacing" ng-repeat="phrase in phraseCtrl.phrases | filter:q">
+              <div class="num">{{$index+1}}. </div>
+              <div class="words col-xs-10" data-phrase-index="{{phrase.index}}">
+                            <span class="word" ng-repeat="word in phrase.words"
+                                  ng-click="phraseCtrl.toggleWord($event, this)">
+                                {{word.text}}
+                            </span>
+              </div>
+              <div class="shows col-xs-1">{{phrase.shows}}</div>
+            </li>
+          </ul>
+        </div>
+
+        <button ng-click="workareaCtrl.processPhrases()">Обработать фразы</button>
+      </div>
+
+      <div class="column">
+        <div class="rules list-container ui segment raised" ng-class="rulesCtrl.state"
+             ng-controller="RulesCtrl as rulesCtrl">
+
+          <div ng-include="'/local/keywords/templates/topbar.html'" ng-init="controller = rulesCtrl"></div>
+
+          <div class="controls">
+            <div class="ui mini input icon">
+              <input type="text" placeholder="filter..." ng-model="q">
+              <i class="filter icon"></i>
+            </div>
+          </div>
+
+          <ul class="ui accordion rule-groups" ng-cloak dnd-list="ruleGroups"
+              dnd-allowed-types="['group']">
+            <li class="acc-item group {{ruleGroup.type}}"
+                ng-repeat="ruleGroup in ruleGroups"
+                dnd-type="'group'"
+                dnd-draggable="ruleGroup"
+                dnd-moved="rulesCtrl.onGroupMoved(ruleGroup)"
+                dnd-effect-allowed="move">
+
+              <div class="handle">:::</div>
+
+              <div class="acc-trigger title info"
+                   ng-class="{active: ruleGroups.indexOf(ruleGroup) === 0}"
+                   dnd-nodrag>
+
+                <i class="icon checkmark green" ng-if="ruleGroup.type == 'include'"></i>
+                <i class="icon ban red" ng-if="ruleGroup.type == 'exclude'"></i>
+
+                <span class="text" ng-show="!ruleGroup.edit">{{ruleGroup.title}} ({{ruleGroup.items.length}}) <i class="dropdown icon"></i></span>
+                <div class="ui input"><input type="text" value="{{ruleGroup.title}}" ng-model="ruleGroup.title" ng-show="ruleGroup.edit"/></div>
+
+                <div class="actions">
+                  <i class="icon" ng-click="ruleGroup.edit = !ruleGroup.edit"
+                     ng-class="{edit: !ruleGroup.edit, checkmark: ruleGroup.edit, green: ruleGroup.edit}"></i>
+                  <i class="icon red remove" ng-click="groupsCtrl.deleteGroup(group)"></i>
+                </div>
+              </div>
+
+              <div class="content" ng-class="{active: ruleGroups.indexOf(ruleGroup) === 0}">
+                <ul class="rules list" ng-show="ruleGroup.items.length"
+                    dnd-list="ruleGroup.items"
+                    dnd-allowed-types="['item']">
+
+                  <li class="item"
+                      ng-show="filteredItems.length"
+                      ng-repeat="rule in (filteredItems = (ruleGroup.items | filter:q))"
+                      ng-class="{'selected': rule.selected, new: rule.is_new}"
+
+                      dnd-type="'item'"
+                      dnd-draggable="rule"
+                      dnd-moved="ruleGroup.items.splice(ruleGroup.items.indexOf(rule), 1)"
+                      dnd-effect-allowed="move">
+
+                    <div class="handle">:::</div>
+
+                    <div class="info" dnd-nodrag ng-click="rulesCtrl.onItemSelected(rule)">
+                      <div class="text">{{rule.text}}</div>
+                      <div class="ui input"><input type="text" class="edit" ng-model="rule.text"/></div>
+                    </div>
+
+                    <select ng-options="key as value for (key, value) in rulesCtrl.conditionTypes" name="compare-type"
+                            class="pattern-type" ng-model="rule.condition_type" dnd-nodrag></select>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="groups list-container ui segment raised" ng-class="groupsCtrl.state"
+             ng-controller="GroupsCtrl as groupsCtrl">
+
+          <div ng-include="'/local/keywords/templates/topbar.html'" ng-init="controller = groupsCtrl"></div>
+
+          <div class="controls">
+            <div class="ui mini input icon">
+              <input type="text" placeholder="filter..." ng-model="q">
+              <i class="filter icon"></i>
+            </div>
+          </div>
+
+          <ul class="ui accordion groups" ng-cloak dnd-list="groups"
+              dnd-allowed-types="['group']">
+            <li class="acc-item group {{group.type}}" ng-repeat="group in groups"
+                dnd-type="'group'"
+                dnd-draggable="group"
+                dnd-moved="groupsCtrl.onGroupMoved(group)"
+                dnd-effect-allowed="move">
+
+              <div class="handle">:::</div>
+
+              <div class="acc-trigger title info"
+                   ng-class="{active: groups.indexOf(group) === 0}"
+                   ng-switch on="group.type"
+                   dnd-nodrag>
+
+                <span class="text" ng-show="!group.edit">{{group.title}} <i class="dropdown icon"></i></span>
+                <div class="ui input"><input type="text"  value="{{group.title}}" ng-model="group.title" ng-show="group.edit"/></div>
+
+                <div class="actions">
+                  <i class="icon" ng-click="group.edit = !group.edit"
+                     ng-class="{edit: !group.edit, checkmark: group.edit, green: group.edit}"></i>
+                  <i class="icon red remove" ng-click="groupsCtrl.deleteGroup(group)"></i>
+                </div>
+              </div>
+
+              <div class="content" ng-class="{active: groups.indexOf(group) === 0}">
+                <ul class="rules list" ng-show="group.items.length" dnd-list="group.items"
+                    dnd-allowed-types="['item']">
+
+                  <li class="item"
+                      ng-show="filteredItems.length"
+                      ng-repeat="item in (filteredItems = (group.items | filter:q))"
+                      ng-class="{'selected': item.selected}"
+
+                      dnd-type="'item'"
+                      dnd-draggable="item"
+                      dnd-moved="group.items.splice(group.items.indexOf(item), 1)"
+                      dnd-effect-allowed="move">
+
+                    <div class="handle">:::</div>
+                    <div class="info" dnd-nodrag ng-click="groupsCtrl.onItemSelected(item)">
+                      <div class="text" ng-show="!item.edit">{{item.text}}</div>
+                      <input type="text" class="edit" ng-model="item.text" ng-show="item.edit"/>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="list-container ui segment raised" ng-controller="ResultsCtrl as resultsCtrl">
+          <div ng-include="'/local/keywords/templates/topbar.html'" ng-init="controller = resultsCtrl"></div>
+
+          <div class="controls">
+            <div class="ui mini input icon">
+              <input type="text" placeholder="filter..." ng-model="q">
+              <i class="filter icon"></i>
+            </div>
+          </div>
+
+          <ul class="ui accordion results" ng-cloak dnd-list="resultsCtrl.itemGroups"
+              dnd-allowed-types="['group']">
+            <li class="acc-item group {{group.type}}" ng-repeat="group in resultsCtrl.itemGroups"
+                dnd-type="'group'"
+                dnd-draggable="group"
+                dnd-moved="resultsCtrl.onGroupMoved(group)"
+                dnd-effect-allowed="move">
+
+              <div class="handle">:::</div>
+
+              <div class="acc-trigger title info" ng-class="{active: group.id == 'default'}"
+                   dnd-nodrag>
+                {{group.title}} ({{group.items.length}})
+                <i class="dropdown icon"></i>
+              </div>
+
+              <div class="content" ng-class="{active: group.id == 'default'}">
+                <ul class="result list" ng-mouseup="resultsCtrl.onMouseUp($event)"
+                    ng-cloak>
+                  <li class="item"
+                      ng-repeat="item in group.items | filter:q | orderBy:'item.text'">
+                    <div class="num">{{$index+1}}</div>
+                    <div class="col-xs-10">{{item.text}}</div>
+                    <!--<div class="words col-xs-11" data-phrase-index="{{item.index}}">
+                            <span class="word" ng-class="{selected: !!(selectedItems[word.id])}"
+                                  ng-repeat="word in item.words" ng-click="resultsCtrl.toggleWord($event, this)">
+                                {{word.text}}
+                            </span>
+                    </div>-->
+                    <div class="shows col-xs-1">{{item.shows}}</div>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $('.rule-groups.accordion, .groups.accordion').accordion({
+    exclusive: false,
+    selector: {
+      trigger: '.acc-trigger .text'
+    }
+  });
+
+  $('.results.accordion').accordion({
+    exclusive: false,
+    selector: {
+      trigger: '.acc-trigger'
+    },
+  });
+
+  setTimeout(function () {
+    $('.ui.dropdown').dropdown({action: 'hide'});
+  }, 2000)
+</script>

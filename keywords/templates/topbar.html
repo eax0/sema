@@ -1,0 +1,39 @@
+<div class="top-bar" ng-class="controller.state">
+  <div class="title" ng-if="controller.state == 'default'">{{controller.topBarData.title}} <span ng-if="controller.itemsLength()">({{controller.itemsLength()}})</span></div>
+  <div class="title" ng-if="controller.state == 'active'">Выбрано ({{controller.selectedItems.length}})</div>
+  <div class="title" ng-if="controller.state == 'edit'">Редактирование</div>
+
+  <button ng-if="controller.state == 'edit'" class="save-edit"
+          ng-click="rulesCtrl.cancelSelection()">сохранить
+  </button>
+
+  <button class="cancel"
+          ng-click="controller.cancelSelection()" ng-show="controller.state == 'active'">отменить
+  </button>
+
+  <div class="actions">
+    <i class="icon" ng-repeat="item in controller.topBarData.actions" ng-class="item.icon" ng-click="controller.doAction(item.action, item.actionParams)" ng-show="controller.state == 'active'"></i>
+
+    <div class="ui dropdown item right top pointing" ng-if="controller.topBarData.dropdown_menu"
+         ng-show="controller.state == 'active'">
+      <i class="icon ellipsis vertical"></i>
+
+      <div class="menu">
+        <div class="item" ng-repeat="menuItem in controller.topBarData.dropdown_menu"
+             ng-click="controller.doAction(menuItem.action, menuItem.actionParams)">
+          <i class="dropdown icon" ng-if="menuItem.items.length"></i>
+          <i class="icon" ng-class="menuItem.icon" ng-if="menuItem.icon"></i>
+          <span class="text">{{menuItem.title}}</span>
+
+          <div class="menu" ng-if="menuItem.items.length">
+            <div class="item" ng-repeat="subItem in menuItem.items"
+                 ng-click="controller.doAction(subItem.action, subItem.actionParams)">
+              <i class="icon" ng-class="subItem.icon" ng-if="subItem.icon"></i>
+              <span class="text">{{subItem.title}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
